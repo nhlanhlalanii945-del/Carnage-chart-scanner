@@ -121,3 +121,15 @@ if uploaded_file is not None:
             st.error(f"Error executing live matrix scan: {e}")
 else:
     st.info("💡 Drop your trading chart screenshot above to initialize the automated Carnage scanning matrix.")
+# 1. Fetch the data (Make sure period is at least '5d' so it always has data)
+df = yf.download(tickers=selected_pair, period="5d", interval="15m")
+
+# 2. Check if the data came back empty BEFORE running math
+if df.empty:
+    st.warning("⚠️ Market data stream is temporarily lagging. Tap 'EXECUTE AUTO-SCAN' again to re-fetch.")
+else:
+    # 3. Put ALL your logic, calculations, and .iloc[-1] code INSIDE this block
+    current_price = float(df['Close'].iloc[-1])
+    
+    # ... (rest of your scanner code, CRT ranges, and signal output goes here)
+
