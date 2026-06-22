@@ -4,9 +4,9 @@ import pandas as pd
 import numpy as np
 
 # ==========================================
-# ❄️ DEEP FROZEN / COLD SNOWY THEME INJECTION
+# ❄️ GLOBAL TERMINAL THEME INJECTION
 # ==========================================
-st.set_page_config(page_title="Carnage Auto-Matrix V3", page_icon="❄️", layout="wide")
+st.set_page_config(page_title="Carnage Trading Terminal", page_icon="❄️", layout="wide")
 
 st.markdown("""
     <style>
@@ -34,6 +34,21 @@ st.markdown("""
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
     
+    /* Navigation Tab Styling Customization */
+    button[data-baseweb="tab"] {
+        color: #94a3b8 !important;
+        font-size: 16px !important;
+        font-family: monospace !important;
+        font-weight: bold !important;
+        background-color: transparent !important;
+        transition: all 0.3s ease;
+    }
+    button[aria-selected="true"] {
+        color: #38bdf8 !important;
+        border-bottom-color: #38bdf8 !important;
+        text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+    
     /* Ice Blue Buttons */
     .stButton>button {
         background: linear-gradient(135deg, #0f172a 0%, #0284c7 100%) !important;
@@ -57,30 +72,27 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # App Header
-st.markdown("<h1 style='text-align: center;'>❄️ CARNAGE AUTO-MATRIX V3 ❄️</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #94a3b8; font-family: monospace;'>Multi-Timeframe Institutional Risk Terminal</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>❄️ CARNAGE TRADING TERMINAL ❄️</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #94a3b8; font-family: monospace;'>Multi-Strategy Quantitative Market Matrix</p>", unsafe_allow_html=True)
 st.write("---")
 
 # ==========================================
-# 🎛️ CLEANED UP INTERFACE CONFIGURATION
+# 🎛️ SHARED CONTROL CENTER (GLOBAL INPUTS)
 # ==========================================
 col_ui1, col_ui2, col_ui3 = st.columns(3)
 
 with col_ui1:
-    # Combined Currency & Gold selector
     asset_options = ["GOLD (XAUUSD)", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD"]
-    selected_asset = st.selectbox("💱 SELECT TARGET ASSET:", asset_options)
+    selected_asset = st.selectbox("💱 TARGET ASSET BLOCK:", asset_options)
 
 with col_ui2:
-    # Timeframe Selector
     timeframe_options = ["M5 (5 Minute Scalp)", "H1 (1 Hour Intraday)", "D1 (Daily Swing)"]
-    selected_tf = st.selectbox("⏳ SELECT ANALYSIS TIMEFRAME:", timeframe_options)
+    selected_tf = st.selectbox("⏳ RUNTIME TIMEFRAME:", timeframe_options)
 
 with col_ui3:
-    # Simple Capital input box to process flawless automated lot calculations
-    account_balance = st.number_input("💰 ENTER ACCOUNT BALANCE ($):", value=1000.0, step=100.0)
+    account_balance = st.number_input("💰 ACCOUNT CAPITALIZATION ($):", value=1000.0, step=100.0)
 
-# Backend Mapping Matrix
+# Master Ticker Mappings
 ticker_map = {
     "GOLD (XAUUSD)": "GC=F",
     "EURUSD": "EURUSD=X",
@@ -91,159 +103,214 @@ ticker_map = {
 }
 target_ticker = ticker_map[selected_asset]
 
-# Dynamic Timeframe parameter adjustments
+# Configure historical window size metrics
 if "M5" in selected_tf:
     tf_interval = "5m"
     tf_period = "5d"
-    lookback_bars = 100  # Localized lookback for short-term structure
-elif "H1" in selected_tf:
-    tf_interval = "1h"
-    tf_period = "1mo"
-    lookback_bars = 48   # 2 days lookback for institutional intraday zones
+    lookback_bars = 100  
 else:
-    tf_interval = "1d"
-    tf_period = "1y"
-    lookback_bars = 30   # 1 month lookback for swing levels
+    if "H1" in selected_tf:
+        tf_interval = "1h"
+        tf_period = "1mo"
+        lookback_bars = 48   
+    else:
+        tf_interval = "1d"
+        tf_period = "1y"
+        lookback_bars = 30   
 
 st.write("---")
 
 # ==========================================
-# 🧊 SINGLE BUTTON EXECUTION
+# 🧭 SYSTEM NAVIGATION MATRIX (TABS)
 # ==========================================
-if st.button("🧊 EXECUTE SCAN"):
-    with st.spinner(f"❄️ Syncing {selected_asset} {tf_interval} data matrix channels..."):
-        
-        # Safe single ticker retrieval bypasses previous multi-index download errors
-        ticker_obj = yf.Ticker(target_ticker)
-        df = ticker_obj.history(period=tf_period, interval=tf_interval)
-        
-        if df.empty or len(df) < lookback_bars:
-            st.error("⚠️ Server sync latency detected. Please hit EXECUTE SCAN again to refresh.")
-        else:
-            # Flatten pricing points
-            current_price = float(df['Close'].iloc[-1])
-            recent_data = df.tail(lookback_bars)
-            supply_zone = float(recent_data['High'].max())
-            demand_zone = float(recent_data['Low'].min())
-            
-            # Trend Tracking Core Matrix
-            short_ma = df['Close'].rolling(window=10).mean().iloc[-1]
-            long_ma = df['Close'].rolling(window=30).mean().iloc[-1]
-            market_trend = "BULLISH" if short_ma >= long_ma else "BEARISH"
-            
-            # Distance mapping to find discount parameters
-            total_range = supply_zone - demand_zone
-            position_pct = (current_price - demand_zone) / total_range if total_range > 0 else 0.5
-            
-            stop_loss = 0.0
-            take_profit = 0.0
-            
-            # Logic Processing Loop
-            if position_pct <= 0.40 or (market_trend == "BULLISH" and position_pct < 0.75):
-                signal = "BUY"
-                confidence = int(72 + (24 * (1.0 - position_pct)))
-                confidence = min(97, max(70, confidence))
-                reason = f"Price operating within key structural discount territory on the {tf_interval} matrix. Bullish structural trend confirmation verified."
-                
-                # Sizing Buffers based on asset classes
-                if "GOLD" in selected_asset:
-                    buffer = 3.5
-                    stop_loss = current_price - buffer
-                    take_profit = supply_zone if supply_zone > current_price else current_price + (buffer * 2.5)
-                else:
-                    pip_multiplier = 0.0020 if "JPY" not in selected_asset else 0.25
-                    stop_loss = current_price - pip_multiplier
-                    take_profit = supply_zone if supply_zone > current_price else current_price + (pip_multiplier * 2.5)
-            else:
-                signal = "SELL"
-                confidence = int(72 + (24 * position_pct))
-                confidence = min(97, max(70, confidence))
-                reason = f"Price testing structural premium supply boundaries on the {tf_interval} matrix. Institutional distribution order block triggered."
-                
-                if "GOLD" in selected_asset:
-                    buffer = 3.5
-                    stop_loss = current_price + buffer
-                    take_profit = demand_zone if demand_zone < current_price else current_price - (buffer * 2.5)
-                else:
-                    pip_multiplier = 0.0020 if "JPY" not in selected_asset else 0.25
-                    stop_loss = current_price + pip_multiplier
-                    take_profit = demand_zone if demand_zone < current_price else current_price - (pip_multiplier * 2.5)
+tab_v4, tab_v5 = st.tabs(["🧬 RETAIL PULLBACK MATRIX (V4)", "🏛️ INSTITUTIONAL SMC SNIPER (V5)"])
 
-            # ==========================================
-            # 🎯 ACCURACY-BASED DYNAMIC LOT ENGINE
-            # ==========================================
-            # Scales risk percentage directly based on the calculated confidence score
-            if confidence >= 90:
-                risk_profile = "HIGH CONFIDENCE CONFLUENCE"
-                applied_risk_pct = 2.0  # Risk 2% on highly accurate signals
-            elif confidence >= 80:
-                risk_profile = "MEDIUM CONFIDENCE STANDARD"
-                applied_risk_pct = 1.0  # Risk 1% on standard confirmation signals
-            else:
-                risk_profile = "LOW CONFIDENCE CONSERVATIVE"
-                applied_risk_pct = 0.5  # Risk 0.5% on lower confirmation set-ups
-                
-            cash_at_risk = account_balance * (applied_risk_pct / 100.0)
-            sl_distance = abs(current_price - stop_loss)
+# ==========================================
+# STRATEGY TAB 1: FIBONACCI + STOCHASTIC (V4)
+# ==========================================
+with tab_v4:
+    st.markdown("### 🧬 Strategy Overview")
+    st.write("Tracks momentum pullbacks into critical Fibonacci retracement fields verified via Stochastic exhaustion filters.")
+    
+    if st.button("🧊 RUN RETAIL MATRIX SCAN"):
+        with st.spinner("❄️ Gathering data feeds and running Fibonacci projection layouts..."):
+            df = yf.Ticker(target_ticker).history(period=tf_period, interval=tf_interval)
             
-            # Lot Sizing Math adjusted for custom Asset pip variations
-            if "GOLD" in selected_asset:
-                # 1 Lot of Gold risks $100 per $1 move
-                calculated_lots = cash_at_risk / (sl_distance * 100.0)
-            elif "JPY" in selected_asset:
-                # JPY pairs calculate pips at the 0.01 index
-                pips_at_risk = sl_distance / 0.01
-                calculated_lots = cash_at_risk / (pips_at_risk * 10.0)
+            if df.empty or len(df) < lookback_bars:
+                st.error("⚠️ Data handshake timeout. Re-execute the engine.")
             else:
-                # Standard Currency pairs calculate pips at the 0.0001 index
-                pips_at_risk = sl_distance / 0.0001
-                calculated_lots = cash_at_risk / (pips_at_risk * 10.0)
+                df['Close'] = df['Close'].astype(float)
+                df['High'] = df['High'].astype(float)
+                df['Low'] = df['Low'].astype(float)
                 
-            # Floor safety lock to ensure standard MT5 execution compliance
-            final_lot_size = max(0.01, round(calculated_lots, 2))
+                current_price = float(df['Close'].iloc[-1])
+                recent_data = df.tail(lookback_bars)
+                
+                # Stochastic Core Calculations
+                df['Stoch_Low'] = df['Low'].rolling(window=14).min()
+                df['Stoch_High'] = df['High'].rolling(window=14).max()
+                stoch_denom = df['Stoch_High'] - df['Stoch_Low']
+                df['%K'] = np.where(stoch_denom > 0, 100 * ((df['Close'] - df['Stoch_Low']) / stoch_denom), 50)
+                df['%D'] = df['%K'].rolling(window=3).mean()
+                current_k = float(df['%K'].iloc[-1])
+                current_d = float(df['%D'].iloc[-1])
+                
+                # Fib Extractor Lines
+                fib_high = float(recent_data['High'].max())
+                fib_low = float(recent_data['Low'].min())
+                fib_range = (fib_high - fib_low) if (fib_high - fib_low) > 0 else 0.0001
+                
+                short_ema = df['Close'].rolling(window=10).mean().iloc[-1]
+                long_ema = df['Close'].rolling(window=30).mean().iloc[-1]
+                market_trend = "BULLISH" if short_ema >= long_ema else "BEARISH"
+                
+                fib_500 = fib_high - (0.500 * fib_range) if market_trend == "BULLISH" else fib_low + (0.500 * fib_range)
+                fib_618 = fib_high - (0.618 * fib_range) if market_trend == "BULLISH" else fib_low + (0.618 * fib_range)
+                
+                # Processing signal confluences
+                signal, confidence = "STANDBY", 50
+                sl_buffer = 4.0 if "GOLD" in selected_asset else (0.0025 if "JPY" not in selected_asset else 0.30)
+                
+                if market_trend == "BULLISH":
+                    if current_price <= fib_500 and (current_k < 35 or current_d < 35):
+                        signal, confidence = "BUY", 88
+                        reason = f"Price tracing optimal discount zones below 50% Fib ({fib_500:.4f}). Stochastic oversold line acts as final validation."
+                        stop_loss = fib_low - (sl_buffer * 0.5)
+                        take_profit = fib_high
+                    else:
+                        signal, confidence = "BUY", 65
+                        reason = "Upward trend active. Spot pricing structural execution parameters resting at baseline ranges."
+                        stop_loss = current_price - sl_buffer
+                        take_profit = fib_high
+                else:
+                    if current_price >= fib_500 and (current_k > 65 or current_d > 65):
+                        signal, confidence = "SELL", 87
+                        reason = f"Price matching heavy premium extensions above 50% Fib ({fib_500:.4f}). Short sellers loading blocks under overbought parameters."
+                        stop_loss = fib_high + (sl_buffer * 0.5)
+                        take_profit = fib_low
+                    else:
+                        signal, confidence = "SELL", 62
+                        reason = "Bearish configuration holds. Spot trading below active structural resistance zones."
+                        stop_loss = current_price + sl_buffer
+                        take_profit = fib_low
+                
+                # Risk calculation engine parameters
+                applied_risk_pct = 2.0 if confidence >= 80 else 0.5
+                cash_at_risk = account_balance * (applied_risk_pct / 100.0)
+                sl_dist = abs(current_price - stop_loss) if abs(current_price - stop_loss) > 0 else 0.0001
+                
+                if "GOLD" in selected_asset: calculated_lots = cash_at_risk / (sl_dist * 100.0)
+                elif "JPY" in selected_asset: calculated_lots = cash_at_risk / ((sl_dist / 0.01) * 10.0)
+                else: calculated_lots = cash_at_risk / ((sl_dist / 0.0001) * 10.0)
+                final_lot_size = max(0.01, round(calculated_lots, 2))
+                
+                # Dashboard UI Interface Flash
+                c1, c2, c3 = st.columns(3)
+                c1.metric("🧊 Spot Price", f"${current_price:.2f}" if "GOLD" in selected_asset else f"{current_price:.5f}")
+                c1.metric("📊 Stochastic %K", f"{current_k:.2f}")
+                c2.metric("🟡 Fib 50.0% Line", f"${fib_500:.2f}" if "GOLD" in selected_asset else f"{fib_500:.5f}")
+                c2.metric("📈 Vector Trend", market_trend)
+                c3.metric("🔵 Fib 61.8% Line", f"${fib_618:.2f}" if "GOLD" in selected_asset else f"{fib_618:.5f}")
+                
+                st.write("---")
+                st.markdown(f"## ⚡ V4 SIGNAL OUTPUT: **{signal}** (Confidence: {confidence}%)")
+                st.info(f"📋 **System Logic Breakdown:** {reason}")
+                
+                st.code(f"🎟️ POSITION SIZE SUGGESTION: 【 {final_lot_size} 】 Lots | SL: {stop_loss:.4f if 'GOLD' not in selected_asset else round(stop_loss,2)} | TP: {take_profit:.4f if 'GOLD' not in selected_asset else round(take_profit,2)}")
 
-            # ==========================================
-            # 📊 METRICS & SCREEN EXDUCTIONS
-            # ==========================================
-            col_m1, col_m2, col_m3 = st.columns(3)
-            with col_m1:
-                st.metric("🧊 Live Spot Price", f"{current_price:.5f}" if "GOLD" not in selected_asset else f"${current_price:.2f}")
-            with col_m2:
-                st.metric("🟥 Supply Ceiling", f"{supply_zone:.5f}" if "GOLD" not in selected_asset else f"${supply_zone:.2f}")
-            with col_m3:
-                st.metric("🟩 Demand Floor", f"{demand_zone:.5f}" if "GOLD" not in selected_asset else f"${demand_zone:.2f}")
-                
-            st.write("---")
+# ==========================================
+# STRATEGY TAB 2: SMART MONEY CONCEPTS (V5)
+# ==========================================
+with tab_v5:
+    st.markdown("### 🏛️ Strategy Overview")
+    st.write("Scans historical high/low ranges for fake-outs (**Liquidity Sweeps**) and tracks institutional reversals via **Market Structure Shifts (MSS)**.")
+    
+    if st.button("🧊 RUN INSTI-SMC SNIPER SCAN"):
+        with st.spinner("❄️ Isolating range boundaries and checking institutional liquidity pools..."):
+            df = yf.Ticker(target_ticker).history(period=tf_period, interval=tf_interval)
             
-            if signal == "BUY":
-                st.markdown(f"<h2 style='color:#22c55e !important;'>⚡ POSITION SIGNAL: {signal}</h2>", unsafe_allow_html=True)
+            if df.empty or len(df) < lookback_bars:
+                st.error("⚠️ Data connection sync issue. Hit target trigger again.")
             else:
-                st.markdown(f"<h2 style='color:#ef4444 !important;'>⚡ POSITION SIGNAL: {signal}</h2>", unsafe_allow_html=True)
+                df['Close'] = df['Close'].astype(float)
+                df['High'] = df['High'].astype(float)
+                df['Low'] = df['Low'].astype(float)
                 
-            st.markdown(f"### 🎯 Confidence Level: **{confidence}%** (`{risk_profile}`)")
-            st.write(f"📋 **Timeframe Strategy Alignment:** {reason}")
-            st.write("---")
-            
-            # Print exact custom Order Ticket with automated risk protections
-            st.markdown("### ❄️ AUTOMATED POSITION RISK EXECUTION LOG")
-            st.code(f"""
-===================================================
-❄️ FREEZE V3 RUNTIME TRANSACTION RISK TICKET ❄️
-===================================================
-• Asset Identifier : {selected_asset}
-• Target Timeframe : {selected_tf.split(' ')[0]}
-• Executed Action  : {signal} POSITION ENGAGED
-• Calculated Entry : {current_price:.5f if "GOLD" not in selected_asset else round(current_price, 2)}
----------------------------------------------------
-⚖️ AUTOMATED RISK MATRIX DATA:
-• System Confidence: {confidence}%
-• Account Balance  : ${account_balance:.2f}
-• Dynamic Risk Sized: {applied_risk_pct}% (${cash_at_risk:.2f} Max Cash Drawdown)
-• SUGGESTED POSITION SIZE: 【 {final_lot_size} 】 Lots
----------------------------------------------------
-🛡️ POSITION PROTECTION CEILINGS:
-• Hard Stop Loss   : {stop_loss:.5f if "GOLD" not in selected_asset else round(stop_loss, 2)}
-• Hard Take Profit : {take_profit:.5f if "GOLD" not in selected_asset else round(take_profit, 2)}
-• Engine Status    : 200 OK // Multi-Timeframe Matrix Active
-===================================================
-            """, language="text")
+                current_price = float(df['Close'].iloc[-1])
+                
+                # Identify Range Structures
+                local_structure = df.tail(25)
+                prior_high = float(local_structure['High'].iloc[:-3].max())
+                prior_low = float(local_structure['Low'].iloc[:-3].min())
+                
+                liquidity_sweep_detected = "NONE"
+                market_structure_shift = "NO"
+                
+                recent_lows = df['Low'].iloc[-3:]
+                recent_highs = df['High'].iloc[-3:]
+                
+                # Check for Liquidity Engine triggers
+                if (recent_lows.min() < prior_low) and (current_price > prior_low):
+                    liquidity_sweep_detected = "BULLISH SWEEP"
+                elif (recent_highs.max() > prior_high) and (current_price < prior_high):
+                    liquidity_sweep_detected = "BEARISH SWEEP"
+                    
+                short_ema = df['Close'].rolling(window=7).mean().iloc[-1]
+                long_ema = df['Close'].rolling(window=21).mean().iloc[-1]
+                macro_trend = "BULLISH" if short_ema >= long_ema else "BEARISH"
+                
+                if (short_ema > long_ema) and (df['Close'].iloc[-3] <= df['Close'].rolling(window=21).mean().iloc[-3]):
+                    market_structure_shift = "BULLISH CHoCH"
+                elif (short_ema < long_ema) and (df['Close'].iloc[-3] >= df['Close'].rolling(window=21).mean().iloc[-3]):
+                    market_structure_shift = "BEARISH CHoCH"
+                    
+                # Signal Processing Algorithms
+                signal, confidence = "STANDBY", 50
+                sl_buffer = 4.5 if "GOLD" in selected_asset else (0.0022 if "JPY" not in selected_asset else 0.28)
+                
+                if macro_trend == "BULLISH":
+                    if "BULLISH" in liquidity_sweep_detected or "BULLISH" in market_structure_shift:
+                        signal, confidence = "BUY", 94
+                        reason = f"Smart money swept retail stop losses below {prior_low:.2f}. Immediate institutional displacement confirms structural market shift."
+                        stop_loss = float(recent_lows.min()) - (sl_buffer * 0.2)
+                        take_profit = float(df['High'].tail(100).max())
+                    else:
+                        signal, confidence = "BUY", 70
+                        reason = "Bullish structure holds. No active institutional liquidity sweep flags on recent candles."
+                        stop_loss = current_price - sl_buffer
+                        take_profit = current_price + (sl_buffer * 2)
+                else:
+                    if "BEARISH" in liquidity_sweep_detected or "BEARISH" in market_structure_shift:
+                        signal, confidence = "SELL", 93
+                        reason = f"Buy-side liquidity swept above structural highs at {prior_high:.2f}. Big banks trapped breakout buyers before a fast drop."
+                        stop_loss = float(recent_highs.max()) + (sl_buffer * 0.2)
+                        take_profit = float(df['Low'].tail(100).min())
+                    else:
+                        signal, confidence = "SELL", 65
+                        reason = "Order flow remains bearish. Waiting for formal liquidity grab validation."
+                        stop_loss = current_price + sl_buffer
+                        take_profit = current_price - (sl_buffer * 2)
+                
+                # Lot Sizing Engine Matrix (3% Allocation for high conviction)
+                applied_risk_pct = 3.0 if confidence >= 88 else 1.0
+                cash_at_risk = account_balance * (applied_risk_pct / 100.0)
+                sl_dist = abs(current_price - stop_loss) if abs(current_price - stop_loss) > 0 else 0.0001
+                
+                if "GOLD" in selected_asset: calculated_lots = cash_at_risk / (sl_dist * 100.0)
+                elif "JPY" in selected_asset: calculated_lots = cash_at_risk / ((sl_dist / 0.01) * 10.0)
+                else: calculated_lots = cash_at_risk / ((sl_dist / 0.0001) * 10.0)
+                final_lot_size = max(0.01, round(calculated_lots, 2))
+                
+                # Interface rendering
+                cc1, cc2, cc3 = st.columns(3)
+                cc1.metric("🧊 Live Price", f"${current_price:.2f}" if "GOLD" in selected_asset else f"{current_price:.5f}")
+                cc1.metric("🕵️‍♂️ Liquidity Mapping", liquidity_sweep_detected)
+                cc2.metric("🛑 Upper Pool Ceiling", f"${prior_high:.2f}" if "GOLD" in selected_asset else f"{prior_high:.5f}")
+                cc2.metric("⚡ Structural Shift", market_structure_shift if market_structure_shift != "NO" else "STABLE")
+                cc3.metric("🟢 Lower Pool Floor", f"${prior_low:.2f}" if "GOLD" in selected_asset else f"{prior_low:.5f}")
+                
+                st.write("---")
+                st.markdown(f"## ⚡ V5 SMC SIGNAL OUTPUT: **{signal}** (Confidence: {confidence}%)")
+                st.info(f"🏛️ **SMC Analysis Breakdown:** {reason}")
+                
+                st.code(f"🎟️ POSITION SIZE SUGGESTION: 【 {final_lot_size} 】 Lots | SL: {stop_loss:.4f if 'GOLD' not in selected_asset else round(stop_loss,2)} | TP: {take_profit:.4f if 'GOLD' not in selected_asset else round(take_profit,2)}")
