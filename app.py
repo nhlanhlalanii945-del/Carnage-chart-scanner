@@ -6,7 +6,7 @@ import numpy as np
 # ==========================================
 # ❄️ GLOBAL TERMINAL THEME INJECTION
 # ==========================================
-st.set_page_config(page_title="Carnage Trading Terminal", page_icon="❄️", layout="wide")
+st.set_page_config(page_title="Carnage Trading Terminal v5.2", page_icon="❄️", layout="wide")
 
 st.markdown("""
     <style>
@@ -72,8 +72,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # App Header
-st.markdown("<h1 style='text-align: center;'>❄️ CARNAGE TRADING TERMINAL ❄️</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #94a3b8; font-family: monospace;'>Multi-Strategy Quantitative Market Matrix</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>❄️ CARNAGE TRADING TERMINAL V5.2 ❄️</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #e11d48; font-family: monospace; font-weight: bold;'>⚠️ NOTE: API data feeds hold a structural 15-minute delay. Use targets as pips/dist markers on MT5.</p>", unsafe_allow_html=True)
 st.write("---")
 
 # ==========================================
@@ -86,7 +86,14 @@ with col_ui1:
     selected_asset = st.selectbox("💱 TARGET ASSET BLOCK:", asset_options)
 
 with col_ui2:
-    timeframe_options = ["M5 (5 Minute Scalp)", "H1 (1 Hour Intraday)", "D1 (Daily Swing)"]
+    timeframe_options = [
+        "M5 (5 Minute Scalp)", 
+        "M15 (15 Minute Scalp)", 
+        "H1 (1 Hour Intraday)", 
+        "H4 (4 Hour Swing)", 
+        "D1 (Daily Swing)",
+        "Weekly (Macro Trend)"
+    ]
     selected_tf = st.selectbox("⏳ RUNTIME TIMEFRAME:", timeframe_options)
 
 with col_ui3:
@@ -103,22 +110,35 @@ ticker_map = {
 }
 target_ticker = ticker_map[selected_asset]
 
-# Configure historical window size metrics
+# Dynamic Data Configurations
 if "M5" in selected_tf:
-    tf_interval = "5m"
-    tf_period = "5d"
-    lookback_bars = 100  
-else:
-    if "H1" in selected_tf:
-        tf_interval = "1h"
-        tf_period = "1mo"
-        lookback_bars = 48   
-    else:
-        tf_interval = "1d"
-        tf_period = "1y"
-        lookback_bars = 30   
+    tf_interval, tf_period, lookback_bars = "5m", "5d", 100  
+elif "M15" in selected_tf:
+    tf_interval, tf_period, lookback_bars = "15m", "1mo", 100
+elif "H1" in selected_tf:
+    tf_interval, tf_period, lookback_bars = "1h", "1mo", 48   
+elif "H4" in selected_tf:
+    tf_interval, tf_period, lookback_bars = "1h", "3mo", 50   
+elif "D1" in selected_tf:
+    tf_interval, tf_period, lookback_bars = "1d", "1y", 30   
+elif "Weekly" in selected_tf:
+    tf_interval, tf_period, lookback_bars = "1wk", "2y", 52
 
 st.write("---")
+
+# Helper Data Extraction Engine
+def fetch_processed_data():
+    df = yf.Ticker(target_ticker).history(period=tf_period, interval=tf_interval)
+    if not df.empty and "H4" in selected_tf:
+        # Custom 4-Hour Resampling Algorithm
+        df = df.resample('4H').agg({
+            'Open': 'first',
+            'High': 'max',
+            'Low': 'min',
+            'Close': 'last',
+            'Volume': 'sum'
+        }).dropna()
+    return df
 
 # ==========================================
 # 🧭 SYSTEM NAVIGATION MATRIX (TABS)
@@ -134,10 +154,10 @@ with tab_v4:
     
     if st.button("🧊 RUN RETAIL MATRIX SCAN"):
         with st.spinner("❄️ Gathering data feeds and running Fibonacci projection layouts..."):
-            df = yf.Ticker(target_ticker).history(period=tf_period, interval=tf_interval)
+            df = fetch_processed_data()
             
             if df.empty or len(df) < lookback_bars:
-                st.error("⚠️ Data handshake timeout. Re-execute the engine.")
+                st.error("⚠️ Data structural sync limitation. Re-execute the engine scan block.")
             else:
                 df['Close'] = df['Close'].astype(float)
                 df['High'] = df['High'].astype(float)
@@ -146,7 +166,6 @@ with tab_v4:
                 current_price = float(df['Close'].iloc[-1])
                 recent_data = df.tail(lookback_bars)
                 
-                # Stochastic Core Calculations
                 df['Stoch_Low'] = df['Low'].rolling(window=14).min()
                 df['Stoch_High'] = df['High'].rolling(window=14).max()
                 stoch_denom = df['Stoch_High'] - df['Stoch_Low']
@@ -155,7 +174,6 @@ with tab_v4:
                 current_k = float(df['%K'].iloc[-1])
                 current_d = float(df['%D'].iloc[-1])
                 
-                # Fib Extractor Lines
                 fib_high = float(recent_data['High'].max())
                 fib_low = float(recent_data['Low'].min())
                 fib_range = (fib_high - fib_low) if (fib_high - fib_low) > 0 else 0.0001
@@ -167,7 +185,6 @@ with tab_v4:
                 fib_500 = fib_high - (0.500 * fib_range) if market_trend == "BULLISH" else fib_low + (0.500 * fib_range)
                 fib_618 = fib_high - (0.618 * fib_range) if market_trend == "BULLISH" else fib_low + (0.618 * fib_range)
                 
-                # Processing signal confluences
                 signal, confidence = "STANDBY", 50
                 sl_buffer = 4.0 if "GOLD" in selected_asset else (0.0025 if "JPY" not in selected_asset else 0.30)
                 
@@ -194,7 +211,6 @@ with tab_v4:
                         stop_loss = current_price + sl_buffer
                         take_profit = fib_low
                 
-                # Risk calculation engine parameters
                 applied_risk_pct = 2.0 if confidence >= 80 else 0.5
                 cash_at_risk = account_balance * (applied_risk_pct / 100.0)
                 sl_dist = abs(current_price - stop_loss) if abs(current_price - stop_loss) > 0 else 0.0001
@@ -204,7 +220,6 @@ with tab_v4:
                 else: calculated_lots = cash_at_risk / ((sl_dist / 0.0001) * 10.0)
                 final_lot_size = max(0.01, round(calculated_lots, 2))
                 
-                # Dashboard UI Interface Flash
                 c1, c2, c3 = st.columns(3)
                 c1.metric("🧊 Spot Price", f"${current_price:.2f}" if "GOLD" in selected_asset else f"{current_price:.5f}")
                 c1.metric("📊 Stochastic %K", f"{current_k:.2f}")
@@ -216,7 +231,12 @@ with tab_v4:
                 st.markdown(f"## ⚡ V4 SIGNAL OUTPUT: **{signal}** (Confidence: {confidence}%)")
                 st.info(f"📋 **System Logic Breakdown:** {reason}")
                 
-                st.code(f"🎟️ POSITION SIZE SUGGESTION: 【 {final_lot_size} 】 Lots | SL: {stop_loss:.4f if 'GOLD' not in selected_asset else round(stop_loss,2)} | TP: {take_profit:.4f if 'GOLD' not in selected_asset else round(take_profit,2)}")
+                st.markdown("### 🎯 TARGET EXECUTION PROTECTION MATRIX")
+                o1, o2, o3, o4 = st.columns(4)
+                o1.metric("⚡ ENTRY PRICE", f"${current_price:.2f}" if "GOLD" in selected_asset else f"{current_price:.5f}")
+                o2.metric("🛑 STOP LOSS (SL)", f"${stop_loss:.2f}" if "GOLD" in selected_asset else f"{stop_loss:.5f}")
+                o3.metric("🟢 TAKE PROFIT (TP)", f"${take_profit:.2f}" if "GOLD" in selected_asset else f"{take_profit:.5f}")
+                o4.metric("⚖️ LOT SIZING", f"{final_lot_size} Lots")
 
 # ==========================================
 # STRATEGY TAB 2: SMART MONEY CONCEPTS (V5)
@@ -227,7 +247,7 @@ with tab_v5:
     
     if st.button("🧊 RUN INSTI-SMC SNIPER SCAN"):
         with st.spinner("❄️ Isolating range boundaries and checking institutional liquidity pools..."):
-            df = yf.Ticker(target_ticker).history(period=tf_period, interval=tf_interval)
+            df = fetch_processed_data()
             
             if df.empty or len(df) < lookback_bars:
                 st.error("⚠️ Data connection sync issue. Hit target trigger again.")
@@ -238,7 +258,6 @@ with tab_v5:
                 
                 current_price = float(df['Close'].iloc[-1])
                 
-                # Identify Range Structures
                 local_structure = df.tail(25)
                 prior_high = float(local_structure['High'].iloc[:-3].max())
                 prior_low = float(local_structure['Low'].iloc[:-3].min())
@@ -249,7 +268,6 @@ with tab_v5:
                 recent_lows = df['Low'].iloc[-3:]
                 recent_highs = df['High'].iloc[-3:]
                 
-                # Check for Liquidity Engine triggers
                 if (recent_lows.min() < prior_low) and (current_price > prior_low):
                     liquidity_sweep_detected = "BULLISH SWEEP"
                 elif (recent_highs.max() > prior_high) and (current_price < prior_high):
@@ -264,7 +282,6 @@ with tab_v5:
                 elif (short_ema < long_ema) and (df['Close'].iloc[-3] >= df['Close'].rolling(window=21).mean().iloc[-3]):
                     market_structure_shift = "BEARISH CHoCH"
                     
-                # Signal Processing Algorithms
                 signal, confidence = "STANDBY", 50
                 sl_buffer = 4.5 if "GOLD" in selected_asset else (0.0022 if "JPY" not in selected_asset else 0.28)
                 
@@ -276,7 +293,7 @@ with tab_v5:
                         take_profit = float(df['High'].tail(100).max())
                     else:
                         signal, confidence = "BUY", 70
-                        reason = "Bullish structure holds. No active institutional liquidity sweep flags on recent candles."
+                        reason = "Bullish structure holds. Trading standard baseline expansion ranges."
                         stop_loss = current_price - sl_buffer
                         take_profit = current_price + (sl_buffer * 2)
                 else:
@@ -291,7 +308,6 @@ with tab_v5:
                         stop_loss = current_price + sl_buffer
                         take_profit = current_price - (sl_buffer * 2)
                 
-                # Lot Sizing Engine Matrix (3% Allocation for high conviction)
                 applied_risk_pct = 3.0 if confidence >= 88 else 1.0
                 cash_at_risk = account_balance * (applied_risk_pct / 100.0)
                 sl_dist = abs(current_price - stop_loss) if abs(current_price - stop_loss) > 0 else 0.0001
@@ -301,7 +317,6 @@ with tab_v5:
                 else: calculated_lots = cash_at_risk / ((sl_dist / 0.0001) * 10.0)
                 final_lot_size = max(0.01, round(calculated_lots, 2))
                 
-                # Interface rendering
                 cc1, cc2, cc3 = st.columns(3)
                 cc1.metric("🧊 Live Price", f"${current_price:.2f}" if "GOLD" in selected_asset else f"{current_price:.5f}")
                 cc1.metric("🕵️‍♂️ Liquidity Mapping", liquidity_sweep_detected)
@@ -313,4 +328,9 @@ with tab_v5:
                 st.markdown(f"## ⚡ V5 SMC SIGNAL OUTPUT: **{signal}** (Confidence: {confidence}%)")
                 st.info(f"🏛️ **SMC Analysis Breakdown:** {reason}")
                 
-                st.code(f"🎟️ POSITION SIZE SUGGESTION: 【 {final_lot_size} 】 Lots | SL: {stop_loss:.4f if 'GOLD' not in selected_asset else round(stop_loss,2)} | TP: {take_profit:.4f if 'GOLD' not in selected_asset else round(take_profit,2)}")
+                st.markdown("### 🎯 TARGET EXECUTION PROTECTION MATRIX")
+                oo1, oo2, oo3, oo4 = st.columns(4)
+                oo1.metric("⚡ ENTRY PRICE", f"${current_price:.2f}" if "GOLD" in selected_asset else f"{current_price:.5f}")
+                oo2.metric("🛑 STOP LOSS (SL)", f"${stop_loss:.2f}" if "GOLD" in selected_asset else f"{stop_loss:.5f}")
+                oo3.metric("🟢 TAKE PROFIT (TP)", f"${take_profit:.2f}" if "GOLD" in selected_asset else f"{take_profit:.5f}")
+                oo4.metric("⚖️ LOT SIZING", f"{final_lot_size} Lots")
