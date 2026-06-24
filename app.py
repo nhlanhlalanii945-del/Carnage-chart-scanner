@@ -129,7 +129,7 @@ with tab_vision:
                     4. Based on your visual assessment, issue a definitive trading signal: BUY, SELL, or STANDBY.
                     5. If a signal is issued, calculate a highly accurate structural Stop Loss (SL) and Take Profit (TP) matching the exact price numbers on this specific broker chart.
                     
-                    Account Balance: ${account_cap}
+                    Account Balance: ${{account_cap}}
                     Risk Percentage: {risk_pct}%
                     
                     Format your response strictly using this clean markdown template so it renders cleanly inside our UI layout:
